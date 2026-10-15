@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unified Agile Intelligence & Capacity Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <style>
+      :root {
+        --primary: #1a237e;
+        --primary-hover: #121858;
+        --accent: #ed7d31;
+        --accent-hover: #d66922;
+        --danger: #c53030;
+        --success: #1e7145;
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+        --text: #2d3748;
+        --border: #e2e8f0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 30px;
+        color: var(--text);
+        background-color: var(--bg);
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+        color: #2b4c7e;
+        margin: 0;
+      }
+
+      /* Configuration Panel */
+      .config-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 30px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+      .config-card h1 {
+        font-size: 28px;
+      }
+      .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4a5568;
+      }
+      .form-control {
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+      select[multiple].form-control {
+        min-height: 90px;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+        align-items: center;
+      }
+      button {
+        padding: 9px 18px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: background-color 0.15s ease-in-out;
+      }
+      .btn-primary {
+        background-color: var(--primary);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background-color: var(--primary-hover);
+      }
+      .btn-accent {
+        background-color: var(--accent);
+        color: #fff;
+      }
+      .btn-accent:hover {
+        background-color: var(--accent-hover);
+      }
+      .btn-outline {
+        background-color: #fff;
+        border: 1px solid var(--border);
+        color: #4a5568;
+      }
+      .btn-outline:hover {
+        background-color: #edf2f7;
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .status-badge {
+        font-size: 13px;
+        font-weight: 500;
+        color: #718096;
+        margin-left: auto;
+      }
+
+      /* Dashboard Header (Velocity) */
+      .dashboard-header-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 40px;
+        padding: 0 10px;
+      }
+      .header-left {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 10px;
+      }
+      .dashboard-header-summary h1 {
+        color: #c0504d;
+        font-size: 32px;
+        font-weight: bold;
+        margin: 0 0 15px 0;
+      }
+      .text-legend {
+        display: flex;
+        gap: 15px;
+        font-size: 14px;
+      }
+
+      .timeline-table {
+        border-collapse: collapse;
+        font-size: 11px;
+        width: 320px;
+        background: #fff;
+      }
+      .timeline-table th {
+        background-color: #da6d25;
+        color: white;
+        padding: 6px 10px;
+        text-align: center;
+        border: 1px solid #fff;
+      }
+      .timeline-table td {
+        padding: 6px 10px;
+        text-align: center;
+        color: #333;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .timeline-table tr:nth-child(even) {
+        background-color: #fce4d6;
+      }
+
+      /* Dashboard Sections & Grids */
+      .dashboard-section {
+        background: var(--bg);
+        padding: 0;
+        margin-bottom: 40px;
+        border: none;
+      }
+      .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+      }
+      .chart-wrapper {
+        width: 100%;
+        height: 350px;
+      }
+
+      /* Capacity Section specific styles */
+      .capacity-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 20px;
+        padding: 0 10px;
+      }
+      .capacity-header-row h1 {
+        color: #c0504d;
+        font-size: 32px;
+        font-weight: bold;
+        margin: 0;
+      }
+      .capacity-legend {
+        display: flex;
+        gap: 15px;
+        font-size: 12px;
+        color: #555;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .legend-box {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+      }
+      .box-planned {
+        background-color: #82c3d7;
+      }
+      .box-completed {
+        background-color: #1e7145;
+      }
+
+      /* AI Section */
+      #ai-dynamic-title {
+        color: #1a237e;
+        font-size: 24px;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-weight: bold;
+        margin-bottom: 20px;
+        padding: 0 10px;
+      }
+      .ai-loading {
+        padding: 20px;
+        text-align: center;
+        color: #2b4c7e;
+        font-weight: 600;
+        background: #ebf8ff;
+        border: 1px dashed #bee3f8;
+        border-radius: 6px;
+      }
+      .team-insights-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+      .team-card {
+        background-color: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 16px;
+      }
+      .team-card-title {
+        font-weight: 700;
+        color: #2b4c7e;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+      .team-card ul {
+        margin: 0 0 12px 0;
+        padding-left: 20px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #333;
+      }
+      .inference-text {
+        font-size: 13px;
+        font-style: italic;
+        color: #2f855a;
+        font-weight: 600;
+      }
+
+      .cross-insights-title {
+        color: #1a237e;
+        font-size: 18px;
+        font-family: "Segoe UI", sans-serif;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+      .cross-insights-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .insight-box {
+        border-radius: 6px;
+        padding: 16px;
+        font-size: 13px;
+        border: 1px solid var(--border);
+        background: #f8fafc;
+      }
+      .insight-box h3 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+      }
+      .insight-box ul {
+        margin: 0;
+        padding-left: 20px;
+        line-height: 1.5;
+        color: #333;
+      }
+      .narrative-box {
+        background-color: #ebf8ff;
+        border: 1px solid #bee3f8;
+        border-radius: 6px;
+        padding: 16px;
+      }
+
+      /* Print Styles */
+      @media print {
+        @page {
+          size: landscape;
+          margin: 1cm;
+        }
+        body {
+          padding: 0;
+          background: #fff;
+        }
+        .config-card,
+        .btn-row {
+          display: none !important;
+        }
+        .dashboard-header-summary,
+        .capacity-header-row {
+          margin-bottom: 20px;
+        }
+        .dashboard-section {
+          margin-bottom: 40px;
+          border: none;
+          box-shadow: none;
+          padding: 0;
+        }
+        .charts-grid {
+          display: grid !important;
+          grid-template-columns: repeat(4, 1fr) !important;
+          row-gap: 60px !important;
+          column-gap: 20px !important;
+        }
+        #capacity-grid {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+        .chart-wrapper {
+          height: 280px !important;
+          margin-bottom: 30px !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid;
+        }
+        .team-insights-grid {
+          page-break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Configuration Workspace -->
+    <div class="config-card">
+      <h1>Agile Intelligence Workspace</h1>
+
+      <div class="config-grid">
+        <div class="form-group">
+          <label>Organization Name</label>
+          <input
+            type="text"
+            id="orgInput"
+            class="form-control"
+            value="MovateAI-Foundry"
+          />
+        </div>
+        <div class="form-group">
+          <label>Personal Access Token (PAT)</label>
+          <input
+            type="password"
+            id="patInput"
+            class="form-control"
+            placeholder="Paste Read-Only PAT"
+          />
+        </div>
+        <div class="form-group">
+          <label>Project</label>
+          <select id="projectInput" class="form-control">
+            <option value="AI-Foundry">AI-Foundry</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="lyzrKeyInput">Lyzr API Key</label>
+          <input
+            type="password"
+            id="lyzrKeyInput"
+            class="form-control"
+            value="sk-default-88iCeEjGi7r0GL4Flnw7knzMpooe9fOu"
+            placeholder="sk-default-..."
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lyzrUserId">Lyzr User ID</label>
+          <input
+            type="text"
+            id="lyzrUserId"
+            class="form-control"
+            value="meena.rahulmalu@movate.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lyzrAgentId">Lyzr Agent ID</label>
+          <input
+            type="text"
+            id="lyzrAgentId"
+            class="form-control"
+            value="6ace02aeed50cb3ba6d42bf3"
+          />
+        </div>
+        <div class="form-group">
+          <label>Lyzr Session ID</label>
+          <input
+            type="text"
+            id="lyzrSessionId"
+            class="form-control"
+            placeholder="Leave blank to auto-generate"
+          />
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top: 14px">
+        <button
+          type="button"
+          class="btn-outline"
+          onclick="loadProjectMetadata()"
+        >
+          Connect & Discover Sprints
+        </button>
+        <span class="status-badge" id="meta-status" style="margin-left: 10px"
+          >Awaiting connection...</span
+        >
+      </div>
+
+      <div class="config-grid" style="margin-top: 14px">
+        <div class="form-group">
+          <label>Teams (Ctrl / Cmd + Click)</label>
+          <select id="teamSelect" class="form-control" multiple>
+            <option disabled>Connect to load teams...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sprint Iterations (Ctrl / Cmd + Click)</label>
+          <select id="sprintSelect" class="form-control" multiple>
+            <option disabled>Connect to load sprints...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button
+          type="button"
+          id="refresh-btn"
+          class="btn-primary"
+          onclick="runDashboardPipeline()"
+          disabled
+        >
+          Generate Dashboard & Insights
+        </button>
+        <button type="button" class="btn-accent" onclick="window.print()">
+          Print PDF
+        </button>
+        <span class="status-badge" id="status-display">Ready</span>
+      </div>
+    </div>
+
+    <!-- Dynamic Header & Timeline Table (Velocity) -->
+    <div
+      class="dashboard-header-summary"
+      id="summary-header"
+      style="display: none"
+    >
+      <div class="header-left">
+        <h1 id="dynamic-dashboard-title">
+          Sprint Comparison — Iteration X to Y
+        </h1>
+        <div class="text-legend">
+          <span style="color: #1e7145; font-weight: bold">Completed</span>
+          <span style="color: #8cc63f; font-weight: bold">Completed late</span>
+          <span style="color: #00aeef; font-weight: bold">Incomplete</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <table class="timeline-table">
+          <thead>
+            <tr>
+              <th>Iteration</th>
+              <th>Timelines</th>
+            </tr>
+          </thead>
+          <tbody id="timeline-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Velocity Section -->
+    <div class="dashboard-section" id="velocity-section" style="display: none">
+      <div class="charts-grid" id="velocity-grid"></div>
+    </div>
+
+    <!-- Capacity Section Header & Grid -->
+    <div class="dashboard-section" id="capacity-section" style="display: none">
+      <div class="capacity-header-row">
+        <h1 id="capacity-dynamic-title">
+          Capacity Planned vs Utilized — Iteration X to Y
+        </h1>
+        <div class="capacity-legend">
+          <div class="legend-item">
+            <div class="legend-box box-planned"></div>
+            Capacity Planned (Hrs)
+          </div>
+          <div class="legend-item">
+            <div class="legend-box box-completed"></div>
+            Completed (Hrs)
+          </div>
+        </div>
+      </div>
+      <div
+        class="charts-grid"
+        id="capacity-grid"
+        style="grid-template-columns: repeat(2, 1fr)"
+      ></div>
+    </div>
+
+    <!-- AI Section -->
+    <div class="dashboard-section" id="ai-section" style="display: none">
+      <h1 id="ai-dynamic-title">
+        Key AI Inferences of AI Foundry Velocity (Iteration X - Y)
+      </h1>
+      <div id="ai-loading" class="ai-loading">
+        🧠 Synthesizing delivery metrics with Lyzr Agent...
+      </div>
+      <div id="ai-content" style="display: none">
+        <div class="team-insights-grid" id="ai-team-container"></div>
+        <div class="cross-insights-title">Cross-Team Insights</div>
+        <div class="cross-insights-grid">
+          <div class="insight-box">
+            <h3 style="color: #2b4c7e">📈 Velocity Trend</h3>
+            <ul id="ai-trend-list"></ul>
+          </div>
+          <div
+            class="insight-box"
+            style="background: #fff5f5; border-color: #feb2b2"
+          >
+            <h3 style="color: #c53030">⚠️ Risk Signals</h3>
+            <ul id="ai-risk-list"></ul>
+          </div>
+          <div
+            class="insight-box"
+            style="background: #f0fff4; border-color: #9ae6b4"
+          >
+            <h3 style="color: #1e7145">✅ Positive Signals</h3>
+            <ul id="ai-positive-list"></ul>
+          </div>
+        </div>
+        <div class="narrative-box">
+          <h3 style="color: #2b6cb0">Leadership-Level Narrative</h3>
+          <div
+            class="inference-text"
+            style="color: #2c5282"
+            id="ai-narrative-text"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      Chart.register(ChartDataLabels);
+      Chart.defaults.plugins.datalabels.display = false;
+
+      let activeChartInstances = [];
+      let discoveredIterations = [];
+
+      function formatNumber(num) {
+        return num.toLocaleString("en-US");
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr) return "";
+        return new Intl.DateTimeFormat("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }).format(new Date(dateStr));
+      }
+
+      function getAdoHeaders() {
+        return {
+          Authorization: `Basic ${btoa(":" + document.getElementById("patInput").value.trim())}`,
+          "Content-Type": "application/json",
+        };
+      }
+
+      async function fetchOData(url) {
+        const res = await fetch(url, { headers: getAdoHeaders() });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        return res.json();
+      }
+
+      async function loadProjectMetadata() {
+        const org = document.getElementById("orgInput").value.trim();
+        const proj = document.getElementById("projectInput").value.trim();
+        const metaStatus = document.getElementById("meta-status");
+        if (!document.getElementById("patInput").value.trim())
+          return alert("Please enter PAT.");
+
+        metaStatus.textContent = "Connecting...";
+        try {
+          const teamsRes = await fetchOData(
+            `https://dev.azure.com/${org}/_apis/projects/${proj}/teams?api-version=7.1`,
+          );
+          const teamSel = document.getElementById("teamSelect");
+          teamSel.innerHTML = "";
+          (teamsRes.value || []).forEach((t) =>
+            teamSel.add(new Option(t.name, t.name, false, true)),
+          );
+
+          const iterRes = await fetchOData(
+            `https://analytics.dev.azure.com/${org}/${proj}/_odata/v4.0-preview/Iterations?$select=IterationName,StartDate,EndDate&$filter=Project/ProjectName eq '${proj}' and StartDate ne null&$orderby=StartDate desc&$top=12`,
+          );
+          discoveredIterations = (iterRes.value || []).reverse();
+
+          const sprintSel = document.getElementById("sprintSelect");
+          sprintSel.innerHTML = "";
+          discoveredIterations.forEach((it, i) =>
+            sprintSel.add(
+              new Option(
+                `${it.IterationName} (${formatDate(it.StartDate)} - ${formatDate(it.EndDate)})`,
+                it.IterationName,
+                false,
+                i >= discoveredIterations.length - 6,
+              ),
+            ),
+          );
+
+          metaStatus.textContent = "Ready.";
+          document.getElementById("refresh-btn").disabled = false;
+        } catch (e) {
+          alert("Failed: " + e.message);
+          metaStatus.textContent = "Error.";
+        }
+      }
+
+      async function runDashboardPipeline() {
+        const status = document.getElementById("status-display");
+        const teams = Array.from(
+          document.getElementById("teamSelect").selectedOptions,
+        ).map((o) => o.value);
+        const iters = Array.from(
+          document.getElementById("sprintSelect").selectedOptions,
+        ).map((o) => o.value);
+        const org = document.getElementById("orgInput").value.trim();
+        const proj = document.getElementById("projectInput").value.trim();
+        const odataBase = `https://analytics.dev.azure.com/${org}/${proj}/_odata/v4.0-preview`;
+
+        if (!teams.length || !iters.length)
+          return alert("Select teams/sprints.");
+        document.getElementById("refresh-btn").disabled = true;
+
+        const fIter = iters[0].replace("Iteration ", "");
+        const lIter = iters[iters.length - 1].replace("Iteration ", "");
+        document.getElementById("dynamic-dashboard-title").textContent =
+          `Sprint Comparison — Iteration ${fIter} to ${lIter}`;
+        document.getElementById("capacity-dynamic-title").textContent =
+          `Capacity Planned vs Utilized — Iteration ${fIter} to ${lIter}`;
+        document.getElementById("ai-dynamic-title").textContent =
+          `Key AI Inferences of ${proj} Velocity (Iteration ${fIter} - Iteration ${lIter})`;
+
+        document.getElementById("summary-header").style.display = "flex";
+        document.getElementById("velocity-section").style.display = "block";
+        document.getElementById("capacity-section").style.display = "block";
+
+        const tbody = document.getElementById("timeline-body");
+        tbody.innerHTML = "";
+        const iterMap = {};
+
+        discoveredIterations
+          .filter((it) => iters.includes(it.IterationName))
+          .forEach((it) => {
+            iterMap[it.IterationName] = it.EndDate
+              ? new Date(it.EndDate)
+              : null;
+            tbody.innerHTML += `<tr><td>${it.IterationName}</td><td>${formatDate(it.StartDate)} - ${formatDate(it.EndDate)}</td></tr>`;
+          });
+
+        try {
+          status.textContent = "Fetching Data...";
+          const tFilter = teams
+            .map((t) => `Teams/any(tm:tm/TeamName eq '${t}')`)
+            .join(" or ");
+          const iFilter = iters
+            .map((i) => `Iteration/IterationName eq '${i}'`)
+            .join(" or ");
+          const vTypes = "('User Story', 'Bug', 'Product Backlog Item')";
+
+          const [velRes, capRes] = await Promise.all([
+            fetchOData(
+              `${odataBase}/WorkItems?$select=WorkItemId,StateCategory,ClosedDate&$expand=Teams($select=TeamName),Iteration($select=IterationName,EndDate)&$filter=${encodeURIComponent(`Project/ProjectName eq '${proj}' and (${iFilter}) and (${tFilter}) and WorkItemType in${vTypes}`)}`,
+            ),
+            fetchOData(
+              `${odataBase}/WorkItems?$select=WorkItemId,OriginalEstimate,CompletedWork&$expand=Teams($select=TeamName),Iteration($select=IterationName)&$filter=${encodeURIComponent(`Project/ProjectName eq '${proj}' and (${iFilter}) and (${tFilter}) and WorkItemType eq 'Task'`)}`,
+            ),
+          ]);
+
+          const master = { iterations: iters, teams: {} };
+          teams.forEach(
+            (t) =>
+              (master.teams[t] = {
+                vel: {
+                  comp: Array(iters.length).fill(0),
+                  late: Array(iters.length).fill(0),
+                  inc: Array(iters.length).fill(0),
+                },
+                cap: {
+                  p: Array(iters.length).fill(0),
+                  c: Array(iters.length).fill(0),
+                },
+              }),
+          );
+
+          (velRes.value || []).forEach((item) => {
+            const it = item.Iteration?.IterationName;
+            const idx = iters.indexOf(it);
+            if (idx === -1) return;
+            const isDone = item.StateCategory === "Completed";
+            const end = item.Iteration?.EndDate
+              ? new Date(item.Iteration.EndDate)
+              : iterMap[it];
+            const closed = item.ClosedDate ? new Date(item.ClosedDate) : null;
+            (item.Teams || []).forEach((t) => {
+              if (!master.teams[t.TeamName]) return;
+              if (!isDone) master.teams[t.TeamName].vel.inc[idx]++;
+              else if (closed && end && closed > end)
+                master.teams[t.TeamName].vel.late[idx]++;
+              else master.teams[t.TeamName].vel.comp[idx]++;
+            });
+          });
+
+          (capRes.value || []).forEach((item) => {
+            const it = item.Iteration?.IterationName;
+            const idx = iters.indexOf(it);
+            if (idx === -1) return;
+            (item.Teams || []).forEach((t) => {
+              if (!master.teams[t.TeamName]) return;
+              master.teams[t.TeamName].cap.p[idx] += item.OriginalEstimate || 0;
+              master.teams[t.TeamName].cap.c[idx] += item.CompletedWork || 0;
+            });
+          });
+
+          renderCharts(master);
+
+          const lyzrKey = document.getElementById("lyzrKeyInput").value.trim();
+          if (lyzrKey) await triggerLyzrInference(master, lyzrKey);
+
+          status.textContent = "Success.";
+        } catch (e) {
+          alert(e.message);
+          status.textContent = "Error.";
+        } finally {
+          document.getElementById("refresh-btn").disabled = false;
+        }
+      }
+
+      function renderCharts(data) {
+        activeChartInstances.forEach((c) => c.destroy());
+        activeChartInstances = [];
+        document.getElementById("velocity-grid").innerHTML = "";
+        document.getElementById("capacity-grid").innerHTML = "";
+
+        const sLabels = data.iterations.map((l) => l.replace("Iteration ", ""));
+        const splitLabels = sLabels.map((l) => ["Iteration", l]);
+
+        Object.keys(data.teams).forEach((tName) => {
+          const team = data.teams[tName];
+
+          const vWrap = document.createElement("div");
+          vWrap.className = "chart-wrapper";
+          const vCanvas = document.createElement("canvas");
+          vWrap.appendChild(vCanvas);
+          document.getElementById("velocity-grid").appendChild(vWrap);
+
+          activeChartInstances.push(
+            new Chart(vCanvas, {
+              type: "bar",
+              data: {
+                labels: splitLabels,
+                datasets: [
+                  {
+                    label: "Completed",
+                    backgroundColor: "#1E7145",
+                    data: team.vel.comp,
+                    stack: "1",
+                  },
+                  {
+                    label: "Completed late",
+                    backgroundColor: "#8CC63F",
+                    data: team.vel.late,
+                    stack: "1",
+                  },
+                  {
+                    label: "Incomplete",
+                    backgroundColor: "#00AEEF",
+                    data: team.vel.inc,
+                    stack: "1",
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  title: {
+                    display: true,
+                    text: tName.replace(/-/g, " "),
+                    color: "#1A237E",
+                    font: { size: 14, weight: "bold" },
+                    align: "start",
+                    padding: { bottom: 20 },
+                  },
+                  legend: { display: false },
+                },
+                scales: {
+                  x: {
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: { font: { size: 10 }, color: "#555" },
+                  },
+                  y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    suggestedMax: 50,
+                    border: { display: true, color: "#ccc" },
+                    grid: { color: "#eee" },
+                  },
+                },
+              },
+            }),
+          );
+
+          const cWrap = document.createElement("div");
+          cWrap.className = "chart-wrapper";
+          const cCanvas = document.createElement("canvas");
+          cWrap.appendChild(cCanvas);
+          document.getElementById("capacity-grid").appendChild(cWrap);
+
+          const avg =
+            team.cap.p.reduce((a, b) => a + b, 0) > 0
+              ? (
+                  (team.cap.c.reduce((a, b) => a + b, 0) /
+                    team.cap.p.reduce((a, b) => a + b, 0)) *
+                  100
+                ).toFixed(1)
+              : "0.0";
+          activeChartInstances.push(
+            new Chart(cCanvas, {
+              type: "bar",
+              data: {
+                labels: splitLabels,
+                datasets: [
+                  {
+                    label: "Capacity Planned (Hrs)",
+                    backgroundColor: "#82C3D7",
+                    data: team.cap.p,
+                  },
+                  {
+                    label: "Completed (Hrs)",
+                    backgroundColor: "#1E7145",
+                    data: team.cap.c,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  title: {
+                    display: true,
+                    text: `${tName.replace(/-/g, " ")} - Avg. utilization: ${avg}%`,
+                    color: "#C0504D",
+                    font: { size: 14, weight: "bold" },
+                    align: "start",
+                    padding: { bottom: 20 },
+                  },
+                  legend: { display: false },
+                  datalabels: {
+                    display: true,
+                    anchor: "end",
+                    align: "top",
+                    color: "#555",
+                    font: { size: 10 },
+                    formatter: (v) =>
+                      v > 0 ? formatNumber(Math.round(v)) : "",
+                  },
+                },
+                scales: {
+                  x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 }, color: "#555" },
+                  },
+                  y: {
+                    beginAtZero: true,
+                    grace: "15%",
+                    title: {
+                      display: true,
+                      text: "Hours",
+                      color: "#555",
+                      font: { size: 12, weight: "bold" },
+                    },
+                    border: { display: true, color: "#ccc" },
+                    grid: { color: "#eee" },
+                  },
+                },
+              },
+            }),
+          );
+        });
+      }
+
+      async function triggerLyzrInference(data, key) {
+        document.getElementById("ai-section").style.display = "block";
+        document.getElementById("ai-loading").style.display = "block";
+        document.getElementById("ai-content").style.display = "none";
+
+        try {
+          const res = await fetch(
+            "https://agent-prod.studio.lyzr.ai/v3/inference/chat/",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-api-key": key },
+              body: JSON.stringify({
+                user_id: document.getElementById("lyzrUserId").value.trim(),
+                agent_id: document.getElementById("lyzrAgentId").value.trim(),
+                session_id:
+                  document.getElementById("lyzrSessionId").value.trim() ||
+                  `sess-${Date.now()}`,
+                message: `Analyze metrics:\n${JSON.stringify(data)}`,
+              }),
+            },
+          );
+          const result = await res.json();
+          const parsed = JSON.parse(
+            (result.response || result.message || "")
+              .replace(/```json/g, "")
+              .replace(/```/g, "")
+              .trim(),
+          );
+
+          document.getElementById("ai-team-container").innerHTML = (
+            parsed.teamInferences || []
+          )
+            .map(
+              (t, i) =>
+                `<div class="team-card"><div class="team-card-title">${i + 1}. ${t.teamName} — ${t.headline}</div><ul>${(t.bullets || []).map((b) => `<li>${b}</li>`).join("")}</ul><div class="inference-text">Inference: ${t.inference}</div></div>`,
+            )
+            .join("");
+          document.getElementById("ai-trend-list").innerHTML = (
+            parsed.crossTeamInsights?.velocityTrend || []
+          )
+            .map((b) => `<li>${b}</li>`)
+            .join("");
+          document.getElementById("ai-risk-list").innerHTML = (
+            parsed.crossTeamInsights?.riskSignals || []
+          )
+            .map((b) => `<li>${b}</li>`)
+            .join("");
+          document.getElementById("ai-positive-list").innerHTML = (
+            parsed.crossTeamInsights?.positiveSignals || []
+          )
+            .map((b) => `<li>${b}</li>`)
+            .join("");
+          document.getElementById("ai-narrative-text").textContent =
+            `"${parsed.leadershipNarrative || ""}"`;
+
+          document.getElementById("ai-loading").style.display = "none";
+          document.getElementById("ai-content").style.display = "block";
+        } catch (e) {
+          document.getElementById("ai-loading").textContent =
+            "AI Failed: " + e.message;
+        }
+      }
+    </script>
+  </body>
+</html>
